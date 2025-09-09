@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  # Neo4j Database for SBOM storage and graph visualization
+  neo4j:
+    image: neo4j:5.12-community
+    container_name: ai-trust-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/ai-trust-password
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_apoc_export_file_enabled: true
+      NEO4J_apoc_import_file_enabled: true
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/import
+      - neo4j_plugins:/plugins
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: dashboard/backend/Dockerfile
+    container_name: ai-trust-backend
+    ports:
+      - "8000:8000"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ai-trust-password
+      SBOM_STORAGE_PATH: /app/data/sboms
+      KEYS_STORAGE_PATH: /app/data/keys
+    volumes:
+      - sbom_storage:/app/data/sboms
+      - key_storage:/app/data/keys
+      - ./config:/app/config:ro
+    depends_on:
+      - neo4j
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: .
+      dockerfile: dashboard/frontend/Dockerfile
+    container_name: ai-trust-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_BACKEND_URL: http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7.2-alpine
+    container_name: ai-trust-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # SBOM Registry Service
+  registry:
+    build:
+      context: .
+      dockerfile: src/sbom_storage/Dockerfile
+    container_name: ai-trust-registry
+    ports:
+      - "8001:8001"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ai-trust-password
+      REDIS_URL: redis://redis:6379
+      STORAGE_BACKEND: local
+      STORAGE_PATH: /app/data/registry
+    volumes:
+      - registry_storage:/app/data/registry
+      - ./config:/app/config:ro
+    depends_on:
+      - neo4j
+      - redis
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+
+  # Kubernetes Admission Controller Webhook (development)
+  admission-controller:
+    build:
+      context: .
+      dockerfile: src/enforcement/kubernetes/Dockerfile
+    container_name: ai-trust-admission-controller
+    ports:
+      - "8443:8443"
+    environment:
+      TLS_CERT_PATH: /app/certs/tls.crt
+      TLS_KEY_PATH: /app/certs/tls.key
+      REGISTRY_URL: http://registry:8001
+      VERIFICATION_ENABLED: "true"
+    volumes:
+      - admission_controller_certs:/app/certs
+      - ./config:/app/config:ro
+    depends_on:
+      - registry
+    networks:
+      - ai-trust-network
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  neo4j_import:
+    driver: local
+  neo4j_plugins:
+    driver: local
+  redis_data:
+    driver: local
+  sbom_storage:
+    driver: local
+  key_storage:
+    driver: local
+  registry_storage:
+    driver: local
+  admission_controller_certs:
+    driver: local
+
+networks:
+  ai-trust-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

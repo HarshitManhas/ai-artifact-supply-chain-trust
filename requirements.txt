@@ -1,0 +1,53 @@
+# Core cryptographic dependencies
+cryptography>=41.0.0
+
+# Data processing and analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Configuration file parsing
+PyYAML>=6.0
+
+# Optional ML framework support
+# Uncomment as needed for specific use cases
+# torch>=2.0.0
+# tensorflow>=2.12.0
+# onnx>=1.14.0
+# h5py>=3.8.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.4.0
+
+# Documentation
+sphinx>=7.0.0
+sphinx-rtd-theme>=1.3.0
+
+# Neo4j driver for dashboard backend
+neo4j>=5.8.0
+
+# FastAPI for REST API
+fastapi>=0.100.0
+uvicorn>=0.22.0
+
+# Additional utility dependencies
+python-dateutil>=2.8.2
+requests>=2.31.0
+click>=8.1.0
+
+# Docker and container support
+docker>=6.1.0
+
+# Kubernetes client (for admission controllers)
+kubernetes>=27.2.0
+
+# Cloud storage clients (optional)
+# boto3>=1.28.0  # AWS S3
+# azure-storage-blob>=12.17.0  # Azure Blob Storage
+# google-cloud-storage>=2.10.0  # Google Cloud Storage
