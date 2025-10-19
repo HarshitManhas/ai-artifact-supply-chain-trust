@@ -22,7 +22,6 @@
     "react-flow-renderer": "^10.3.17",
     "d3": "^7.8.5",
     "@types/d3": "^7.4.0",
-    "material-ui": "^4.12.4",
     "@mui/material": "^5.14.1",
     "@mui/icons-material": "^5.14.1",
     "@emotion/react": "^11.11.1",

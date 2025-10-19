@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-model-server
+  annotations:
+    ai-trust.artifacts: '["model.pkl", "config.json", "weights.h5"]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-model-server
+  template:
+    metadata:
+      labels:
+        app: ai-model-server
+    spec:
+      containers:
+      - name: model-server
+        image: python:3.11-slim
+        env:
+        - name: MODEL_PATH
+          value: "/models/trained_model.pkl"
+        - name: CONFIG_PATH
+          value: "/config/model_config.json"
+        volumeMounts:
+        - name: model-storage
+          mountPath: /models
+        - name: config-storage
+          mountPath: /config
+        ports:
+        - containerPort: 8080
+        command: ["python", "-m", "http.server", "8080"]
+      volumes:
+      - name: model-storage
+        emptyDir: {}
+      - name: config-storage
+        configMap:
+          name: model-config

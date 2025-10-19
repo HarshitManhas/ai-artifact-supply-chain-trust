@@ -1,0 +1,9 @@
+{
+  "model_name": "sample_classifier",
+  "training_data": "customer_dataset_v2.csv",
+  "hyperparameters": {
+    "learning_rate": 0.01,
+    "epochs": 100,
+    "batch_size": 32
+  }
+}

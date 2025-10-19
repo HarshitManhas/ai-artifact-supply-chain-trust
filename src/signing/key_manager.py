@@ -103,7 +103,7 @@ class KeyManager:
             encryption_algorithm = serialization.BestAvailableEncryption(password)
         
         # Serialize private key
-        pem_bytes = private_key.serialize(
+        pem_bytes = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=encryption_algorithm
@@ -131,7 +131,7 @@ class KeyManager:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Serialize public key
-        pem_bytes = public_key.serialize(
+        pem_bytes = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )

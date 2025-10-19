@@ -182,7 +182,7 @@ class ArtifactSigner:
     def _get_public_key_pem(self) -> str:
         """Get the public key in PEM format."""
         public_key = self.private_key.public_key()
-        public_key_pem = public_key.serialize(
+        public_key_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )

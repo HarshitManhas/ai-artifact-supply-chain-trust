@@ -1,0 +1,557 @@
+name: AI Artifact Supply Chain Verification
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      verify_all:
+        description: 'Verify all artifacts (including existing ones)'
+        required: false
+        default: false
+        type: boolean
+      strict_mode:
+        description: 'Strict mode (fail on any verification failure)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY_URL: ${{ secrets.SBOM_REGISTRY_URL || 'http://localhost:8001' }}
+  VERIFICATION_ENABLED: true
+  STRICT_MODE: ${{ github.event.inputs.strict_mode || 'false' }}
+
+jobs:
+  artifact-detection:
+    name: Detect AI Artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      artifacts: ${{ steps.detect.outputs.artifacts }}
+      artifact-count: ${{ steps.detect.outputs.count }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pyyaml
+
+    - name: Detect AI artifacts
+      id: detect
+      run: |
+        python << 'EOF'
+        import os
+        import json
+        import glob
+        from pathlib import Path
+
+        # AI artifact file extensions
+        ai_extensions = [
+            '.pkl', '.pickle',  # Python pickle
+            '.pth', '.pt',      # PyTorch
+            '.h5', '.hdf5',     # Keras/TensorFlow
+            '.onnx',            # ONNX
+            '.pb',              # TensorFlow
+            '.tflite',          # TensorFlow Lite
+            '.joblib',          # Scikit-learn
+            '.model',           # Generic model
+            '.weights',         # Model weights
+            '.bin',             # Binary model files
+            '.safetensors'      # SafeTensors format
+        ]
+
+        # Find all AI artifacts
+        artifacts = []
+        for ext in ai_extensions:
+            pattern = f"**/*{ext}"
+            files = glob.glob(pattern, recursive=True)
+            
+            for file in files:
+                # Skip hidden files and directories
+                if not any(part.startswith('.') for part in Path(file).parts):
+                    # Skip files in common ignore patterns
+                    ignore_patterns = ['node_modules', '__pycache__', '.git', 'venv', 'env']
+                    if not any(pattern in file for pattern in ignore_patterns):
+                        artifacts.append({
+                            'path': file,
+                            'size': os.path.getsize(file),
+                            'type': ext[1:]  # Remove the dot
+                        })
+
+        # Also check for model configuration files
+        config_patterns = [
+            '**/config.json',
+            '**/model_config.json', 
+            '**/*model*.yaml',
+            '**/*model*.yml'
+        ]
+
+        for pattern in config_patterns:
+            files = glob.glob(pattern, recursive=True)
+            for file in files:
+                if not any(part.startswith('.') for part in Path(file).parts):
+                    # Check if it contains AI/ML related keywords
+                    try:
+                        with open(file, 'r') as f:
+                            content = f.read().lower()
+                            if any(keyword in content for keyword in ['model', 'neural', 'layer', 'epoch', 'learning_rate', 'batch_size']):
+                                artifacts.append({
+                                    'path': file,
+                                    'size': os.path.getsize(file),
+                                    'type': 'config'
+                                })
+                    except:
+                        pass
+
+        print(f"Found {len(artifacts)} AI artifacts:")
+        for artifact in artifacts:
+            print(f"  - {artifact['path']} ({artifact['size']} bytes)")
+
+        # Output for GitHub Actions
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"artifacts={json.dumps(artifacts)}\n")
+            f.write(f"count={len(artifacts)}\n")
+        EOF
+
+  sbom-generation:
+    name: Generate SBOMs
+    runs-on: ubuntu-latest
+    needs: artifact-detection
+    if: needs.artifact-detection.outputs.artifact-count > 0
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install AI Trust Framework
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Generate SBOMs for artifacts
+      env:
+        ARTIFACTS: ${{ needs.artifact-detection.outputs.artifacts }}
+      run: |
+        python << 'EOF'
+        import json
+        import os
+        import sys
+        from pathlib import Path
+
+        # Add src to path
+        sys.path.insert(0, 'src')
+
+        from artifact_creation import SBOMGenerator
+
+        artifacts = json.loads(os.environ['ARTIFACTS'])
+        generator = SBOMGenerator()
+
+        sbom_dir = Path('sboms')
+        sbom_dir.mkdir(exist_ok=True)
+
+        generated_sboms = []
+
+        for artifact in artifacts:
+            try:
+                artifact_path = artifact['path']
+                print(f"Generating SBOM for: {artifact_path}")
+                
+                sbom_entry = generator.create_sbom(
+                    artifact_path=artifact_path,
+                    additional_metadata={
+                        'ci_run_id': os.environ.get('GITHUB_RUN_ID'),
+                        'commit_sha': os.environ.get('GITHUB_SHA'),
+                        'branch': os.environ.get('GITHUB_REF_NAME'),
+                        'repository': os.environ.get('GITHUB_REPOSITORY'),
+                        'artifact_type': artifact['type'],
+                        'artifact_size': artifact['size']
+                    }
+                )
+                
+                # Save SBOM
+                sbom_filename = f"sbom_{sbom_entry.sbom_id}.json"
+                sbom_path = sbom_dir / sbom_filename
+                
+                generator.save_sbom(sbom_entry, str(sbom_path))
+                
+                generated_sboms.append({
+                    'artifact_path': artifact_path,
+                    'sbom_id': sbom_entry.sbom_id,
+                    'sbom_path': str(sbom_path),
+                    'artifact_hash': sbom_entry.artifact_hash
+                })
+                
+                print(f"  ✅ Generated SBOM: {sbom_entry.sbom_id}")
+                
+            except Exception as e:
+                print(f"  ❌ Failed to generate SBOM for {artifact_path}: {e}")
+                continue
+
+        # Save manifest
+        with open('sboms/manifest.json', 'w') as f:
+            json.dump(generated_sboms, f, indent=2)
+
+        print(f"\nGenerated {len(generated_sboms)} SBOMs")
+        EOF
+
+    - name: Upload SBOM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: sboms
+        path: sboms/
+        retention-days: 30
+
+  artifact-signing:
+    name: Sign Artifacts
+    runs-on: ubuntu-latest
+    needs: [artifact-detection, sbom-generation]
+    if: needs.artifact-detection.outputs.artifact-count > 0
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install AI Trust Framework
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Download SBOMs
+      uses: actions/download-artifact@v4
+      with:
+        name: sboms
+        path: sboms/
+
+    - name: Setup signing keys
+      env:
+        SIGNING_PRIVATE_KEY: ${{ secrets.AI_ARTIFACT_SIGNING_KEY }}
+      run: |
+        mkdir -p keys
+        
+        if [ -n "$SIGNING_PRIVATE_KEY" ]; then
+          echo "$SIGNING_PRIVATE_KEY" > keys/private.pem
+          echo "Using provided signing key"
+        else
+          echo "No signing key provided, generating temporary key for demo"
+          python << 'EOF'
+        import sys
+        sys.path.insert(0, 'src')
+        
+        from signing import KeyManager
+        
+        key_manager = KeyManager()
+        private_key, public_key = key_manager.generate_rsa_key_pair()
+        key_manager.save_private_key(private_key, 'keys/private.pem')
+        key_manager.save_public_key(public_key, 'keys/public.pem')
+        print("Generated temporary RSA key pair")
+        EOF
+        fi
+
+    - name: Sign SBOMs
+      run: |
+        python << 'EOF'
+        import json
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, 'src')
+
+        from signing import ArtifactSigner
+
+        # Load SBOM manifest
+        with open('sboms/manifest.json', 'r') as f:
+            sboms = json.load(f)
+
+        signer = ArtifactSigner(
+            private_key_path='keys/private.pem',
+            signer_info={
+                'organization': 'GitHub Actions CI',
+                'run_id': os.environ.get('GITHUB_RUN_ID'),
+                'repository': os.environ.get('GITHUB_REPOSITORY')
+            }
+        )
+
+        signed_sboms = []
+
+        for sbom_info in sboms:
+            try:
+                sbom_path = sbom_info['sbom_path']
+                print(f"Signing SBOM: {sbom_path}")
+                
+                # Load SBOM
+                with open(sbom_path, 'r') as f:
+                    sbom_data = json.load(f)
+                
+                # Sign SBOM
+                signed_sbom = signer.sign_sbom(sbom_data)
+                
+                # Save signed SBOM
+                signed_path = sbom_path.replace('.json', '_signed.json')
+                signer.save_signed_sbom(signed_sbom, signed_path)
+                
+                signed_sboms.append({
+                    **sbom_info,
+                    'signed_sbom_path': signed_path,
+                    'signature_algorithm': signed_sbom.algorithm
+                })
+                
+                print(f"  ✅ Signed: {signed_sbom.algorithm}")
+                
+            except Exception as e:
+                print(f"  ❌ Failed to sign {sbom_path}: {e}")
+                continue
+
+        # Save signed manifest
+        with open('sboms/signed_manifest.json', 'w') as f:
+            json.dump(signed_sboms, f, indent=2)
+
+        print(f"\nSigned {len(signed_sboms)} SBOMs")
+        EOF
+
+    - name: Upload signed artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: signed-sboms
+        path: sboms/
+        retention-days: 30
+
+  artifact-verification:
+    name: Verify Artifacts
+    runs-on: ubuntu-latest
+    needs: [artifact-detection, artifact-signing]
+    if: always() && needs.artifact-detection.outputs.artifact-count > 0
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install AI Trust Framework
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Download signed SBOMs
+      uses: actions/download-artifact@v4
+      with:
+        name: signed-sboms
+        path: sboms/
+        
+    - name: Verify artifacts
+      id: verify
+      run: |
+        python << 'EOF'
+        import json
+        import sys
+        import os
+        from pathlib import Path
+
+        sys.path.insert(0, 'src')
+
+        from verification import ArtifactVerifier
+
+        # Load signed manifest
+        try:
+            with open('sboms/signed_manifest.json', 'r') as f:
+                signed_sboms = json.load(f)
+        except FileNotFoundError:
+            print("No signed SBOMs found, skipping verification")
+            sys.exit(0)
+
+        verifier = ArtifactVerifier()
+        verification_results = []
+        failed_verifications = []
+
+        for sbom_info in signed_sboms:
+            try:
+                artifact_path = sbom_info['artifact_path']
+                signed_sbom_path = sbom_info.get('signed_sbom_path')
+                
+                if not signed_sbom_path:
+                    print(f"No signed SBOM for {artifact_path}")
+                    continue
+
+                print(f"Verifying: {artifact_path}")
+                
+                # Verify artifact
+                result = verifier.verify_artifact_from_file(
+                    artifact_path=artifact_path,
+                    sbom_file_path=signed_sbom_path,
+                    is_signed=True
+                )
+                
+                verification_results.append(result.to_dict())
+                
+                if result.is_valid:
+                    print(f"  ✅ VALID - {', '.join(result.messages)}")
+                else:
+                    print(f"  ❌ INVALID - {', '.join(result.messages)}")
+                    failed_verifications.append(artifact_path)
+                
+            except Exception as e:
+                print(f"  ❌ ERROR verifying {artifact_path}: {e}")
+                failed_verifications.append(artifact_path)
+
+        # Generate verification report
+        report = verifier.generate_verification_report(verification_results)
+        
+        # Save report
+        with open('verification_report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+
+        # Print summary
+        summary = report['summary']
+        print(f"\n📊 VERIFICATION SUMMARY")
+        print(f"Total artifacts: {summary['total_artifacts']}")
+        print(f"Valid artifacts: {summary['valid_artifacts']}")
+        print(f"Invalid artifacts: {summary['invalid_artifacts']}")
+        print(f"Success rate: {summary['success_rate']:.1f}%")
+
+        # Set outputs for next steps
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"success-rate={summary['success_rate']}\n")
+            f.write(f"failed-count={summary['invalid_artifacts']}\n")
+            f.write(f"total-count={summary['total_artifacts']}\n")
+
+        # Fail if strict mode and any failures
+        if os.environ.get('STRICT_MODE', 'false').lower() == 'true' and failed_verifications:
+            print(f"\n❌ STRICT MODE: Failing due to {len(failed_verifications)} verification failures")
+            sys.exit(1)
+        elif failed_verifications:
+            print(f"\n⚠️  WARNING: {len(failed_verifications)} artifacts failed verification")
+            
+        print("\n✅ Verification completed successfully")
+        EOF
+
+    - name: Upload verification report
+      uses: actions/upload-artifact@v4
+      with:
+        name: verification-report
+        path: verification_report.json
+        retention-days: 30
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      env:
+        SUCCESS_RATE: ${{ steps.verify.outputs.success-rate }}
+        FAILED_COUNT: ${{ steps.verify.outputs.failed-count }}
+        TOTAL_COUNT: ${{ steps.verify.outputs.total-count }}
+      with:
+        script: |
+          const successRate = parseFloat(process.env.SUCCESS_RATE);
+          const failedCount = parseInt(process.env.FAILED_COUNT);
+          const totalCount = parseInt(process.env.TOTAL_COUNT);
+          
+          const emoji = successRate === 100 ? '✅' : failedCount > 0 ? '⚠️' : '✅';
+          
+          const comment = `${emoji} **AI Artifact Verification Results**
+          
+          - **Total Artifacts**: ${totalCount}
+          - **Success Rate**: ${successRate.toFixed(1)}%
+          - **Failed Verifications**: ${failedCount}
+          
+          ${successRate === 100 ? 
+            '🎉 All artifacts passed verification!' : 
+            failedCount > 0 ? 
+              `⚠️ ${failedCount} artifact(s) failed verification. Please check the verification report.` :
+              '✅ Verification completed with warnings.'
+          }
+          
+          📋 [View Verification Report](${context.payload.pull_request.html_url}/checks)`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  registry-upload:
+    name: Upload to SBOM Registry  
+    runs-on: ubuntu-latest
+    needs: [artifact-signing, artifact-verification]
+    if: success() && github.ref == 'refs/heads/main'
+    steps:
+    - name: Download signed SBOMs
+      uses: actions/download-artifact@v4
+      with:
+        name: signed-sboms
+        path: sboms/
+
+    - name: Upload to SBOM Registry
+      env:
+        REGISTRY_URL: ${{ env.REGISTRY_URL }}
+        REGISTRY_TOKEN: ${{ secrets.SBOM_REGISTRY_TOKEN }}
+      run: |
+        # Upload signed SBOMs to centralized registry
+        python << 'EOF'
+        import json
+        import requests
+        import os
+
+        registry_url = os.environ.get('REGISTRY_URL')
+        registry_token = os.environ.get('REGISTRY_TOKEN')
+
+        if not registry_url or registry_url == 'http://localhost:8001':
+            print("No registry URL configured, skipping upload")
+            exit(0)
+
+        try:
+            with open('sboms/signed_manifest.json', 'r') as f:
+                signed_sboms = json.load(f)
+        except FileNotFoundError:
+            print("No signed SBOMs to upload")
+            exit(0)
+
+        headers = {}
+        if registry_token:
+            headers['Authorization'] = f'Bearer {registry_token}'
+
+        uploaded = 0
+        for sbom_info in signed_sboms:
+            try:
+                # Load signed SBOM
+                with open(sbom_info['signed_sbom_path'], 'r') as f:
+                    signed_sbom = json.load(f)
+
+                # Upload to registry
+                response = requests.post(
+                    f"{registry_url}/api/sboms/",
+                    json=signed_sbom,
+                    headers=headers,
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    print(f"✅ Uploaded {sbom_info['artifact_path']}")
+                    uploaded += 1
+                else:
+                    print(f"❌ Failed to upload {sbom_info['artifact_path']}: {response.status_code}")
+
+            except Exception as e:
+                print(f"❌ Error uploading {sbom_info['artifact_path']}: {e}")
+
+        print(f"\n📤 Uploaded {uploaded}/{len(signed_sboms)} SBOMs to registry")
+        EOF

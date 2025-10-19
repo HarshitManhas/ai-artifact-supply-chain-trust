@@ -140,7 +140,14 @@ def demonstrate_signing():
         print(f"✅ Signed config SBOM")
         print(f"   Algorithm: {signed_config_sbom.algorithm}")
         
-        return signed_model_sbom, signed_config_sbom, public_key_path
+        # Persist the public key so it remains available after temp dir cleanup
+        persistent_pub_dir = os.path.join("examples", "output")
+        os.makedirs(persistent_pub_dir, exist_ok=True)
+        persistent_pub_path = os.path.join(persistent_pub_dir, "demo_public.pem")
+        import shutil
+        shutil.copyfile(public_key_path, persistent_pub_path)
+        
+        return signed_model_sbom, signed_config_sbom, persistent_pub_path
 
 
 def demonstrate_verification():
@@ -185,8 +192,9 @@ def demonstrate_persistence():
     output_path = "examples/output/signed_model_sbom.json"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    # Use the signer class method to save
-    ArtifactSigner.save_signed_sbom(signed_model_sbom, output_path)
+    # Save signed SBOM to file
+    with open(output_path, 'w') as f:
+        f.write(signed_model_sbom.to_json())
     print(f"✅ Saved signed SBOM to: {output_path}")
     
     # Load from file

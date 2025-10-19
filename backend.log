@@ -1,0 +1,61 @@
+/home/harshit-manhas/ai-artifact-supply-chain-trust/dashboard/backend/main.py:84: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/harshit-manhas/ai-artifact-supply-chain-trust/dashboard/backend/main.py:117: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Will watch for changes in these directories: ['/home/harshit-manhas/ai-artifact-supply-chain-trust']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [28925] using StatReload
+INFO:     Started server process [29044]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+❌ Failed to connect to Neo4j: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+⚠️ Redis not available (optional): Error while reading from localhost:6379 : (104, 'Connection reset by peer')
+Warning: Failed to initialize Neo4j schema: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:43272 - "GET /health HTTP/1.1" 200 OK
+Failed to store SBOM: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:54488 - "POST /api/sboms/create HTTP/1.1" 200 OK
+Failed to get SBOM: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:57400 - "GET /api/sboms/7cf199af-002d-4f89-b0ff-93a177ea55f9 HTTP/1.1" 500 Internal Server Error
+Failed to get statistics: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:57294 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48848 - "GET /health HTTP/1.1" 200 OK
+Failed to get statistics: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:48968 - "GET /api/stats HTTP/1.1" 200 OK
+Failed to store SBOM: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:57138 - "POST /api/sboms/create HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'examples/basic_usage.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [29044]
+INFO:     Started server process [57270]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+❌ Failed to connect to Neo4j: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+⚠️ Redis not available (optional): Error while reading from localhost:6379 : (104, 'Connection reset by peer')
+Warning: Failed to initialize Neo4j schema: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to read four byte Bolt handshake response from server ResolvedIPv4Address(('127.0.0.1', 7687)) (deadline Deadline(timeout=60.0))
+INFO:     127.0.0.1:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57270]
+INFO:     Stopping reloader process [28925]

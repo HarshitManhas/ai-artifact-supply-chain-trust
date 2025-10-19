@@ -1,0 +1,13 @@
+🚀 Starting AI Artifact Admission Controller
+   Registry URL: http://localhost:8000
+   Verification Enabled: True
+   Strict Mode: False
+⚠️  Running admission controller without TLS on port 8443
+ * Serving Flask app 'admission_controller'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8443
+ * Running on http://192.168.0.122:8443
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [18/Oct/2025 23:43:31] "GET /health HTTP/1.1" 200 -

@@ -5,8 +5,8 @@ This module provides functionality for generating Software Bill of Materials (SB
 entries for AI artifacts including cryptographic fingerprints and metadata extraction.
 """
 
-from .sbom_generator import SBOMGenerator
+from .sbom_generator import SBOMGenerator, SBOMEntry
 from .metadata_extractor import MetadataExtractor
 from .artifact_analyzer import ArtifactAnalyzer
 
-__all__ = ['SBOMGenerator', 'MetadataExtractor', 'ArtifactAnalyzer']
+__all__ = ['SBOMGenerator', 'SBOMEntry', 'MetadataExtractor', 'ArtifactAnalyzer']
