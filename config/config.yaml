@@ -1,0 +1,38 @@
+# AI Artifact Supply Chain Trust Framework Configuration
+
+# Signing configuration
+signing:
+  default_algorithm: "RSA-PSS"
+  key_size: 2048
+  key_storage_path: "./keys"
+
+# Storage configuration
+storage:
+  backend: "local"  # Options: local, s3, azure, gcs
+  local:
+    sbom_path: "./data/sboms"
+    registry_path: "./data/registry"
+  
+# Neo4j configuration
+neo4j:
+  uri: "bolt://localhost:7687"
+  user: "neo4j"
+  password: "ai-trust-password"
+
+# API configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: true
+
+# Verification settings
+verification:
+  strict_mode: true
+  cache_results: true
+  cache_ttl_seconds: 3600
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/ai-trust.log"

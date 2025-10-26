@@ -1,6 +1,6 @@
 {
   "sbom_data": {
-    "sbom_id": "46a947ee-7992-49b3-8ea2-1c3e82eab67c",
+    "sbom_id": "d17443ae-f160-4860-9073-fbbb65b2c27f",
     "artifact_path": "examples/artifacts/sample_model.pkl",
     "artifact_hash": "07c91273e2c7c1364d00dba0cc92fab0073ba3c93c3910dfcb13cf425663ea56",
     "metadata": {
@@ -11,9 +11,9 @@
         "absolute_path": "/home/harshit-manhas/ai-artifact-supply-chain-trust/examples/artifacts/sample_model.pkl",
         "size_bytes": 142,
         "size_human": "142.00 B",
-        "created_time": "2025-10-18T18:55:55.640239+00:00",
-        "modified_time": "2025-10-18T18:55:55.640239+00:00",
-        "accessed_time": "2025-10-18T18:55:55.640340+00:00",
+        "created_time": "2025-10-26T22:40:07.800673+00:00",
+        "modified_time": "2025-10-26T22:40:07.800673+00:00",
+        "accessed_time": "2025-10-26T22:40:07.800735+00:00",
         "permissions": "0o100664",
         "owner_uid": 1000,
         "group_gid": 1000,
@@ -29,7 +29,7 @@
         "python_version": "3.12.3",
         "hostname": "Harshit-Control",
         "username": "harshit-manhas",
-        "extraction_timestamp": "2025-10-18T18:55:55.640497+00:00"
+        "extraction_timestamp": "2025-10-26T22:40:07.800846+00:00"
       },
       "artifact_metadata": {
         "artifact_type": "pickle",
@@ -42,15 +42,15 @@
       "classification": "public"
     },
     "dependencies": [],
-    "created_at": "2025-10-18T18:55:55.640550+00:00"
+    "created_at": "2025-10-26T22:40:07.800890+00:00"
   },
-  "signature": "mgNKgtvht/Mi1/zob2VLfs/607zyEl+q9CHv8edq7sxzZ3+Fb3F6YcrBHGFr8iLQdgOf4DE2uoh2OrtjHZ6ni/q6ztyrwqqXRgliAGUtGLeQaCudXfUkVGyXZqc8Bh1LNfCrioQomurFCFPbvgsipAra/nRCFg5aIzPy+jtBsrYahbOxwI65J9fRVTa9OXUvCqpChW41pMp8gTf1doZkRHMtk4PUBF4bPcXWy61bTDycBK0aFXSqrYUaBLZQ5zMc+LGrVxXRODEVstWqNiwx/gwqTpobns+/3ufQhLbFtf48wlOdjulS8D3jlU1yT0dnyXqhnXXLsoV8rfRdRcD/ww==",
-  "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuOCDGDd/W7nkBdY1L/DH\nvf+SDl1mKj6QsMyX5+SFHcMLhbt2AEbC3dEFuPqD2qJ4lbG/ype5Kncmf1/74vic\n3naGypEJ4axXrvUD6DMHVeQnv3blcZl6iIZzY6fZIB5EyRfqFtgZyArzoqjF0wND\nb9VEJkghxW9kD6Mmg+CkuENUf3G2M7O6ciOqay8jKMKekz8njPqC5jl0pxaiQfSO\nK9zbV9ZNdn402S1Lay+Iv+ixklbBCh3a0NJ65rV8JSdIhuDQK7kBshQtmJVMMMGi\nJ93+Yu99DFjablr5f2ZInDZq+8IgDLf+0cou+5i2T1EjtO7OnzzeLHXdf+1O5FCY\n8wIDAQAB\n-----END PUBLIC KEY-----\n",
+  "signature": "G3K0kwTIDqGwtpqOuhjuAtwBvK99PAKxw2PUudgYd5NvXGSITaZBNA8r9hDbj/hLZvsQdrhLF5JZZYeTpmMoclGrGV4Bh4eys7BaVBsl3mQUePFSxEHwzc7OurTH32MAf9aLpLXHk4ec7g63pTTkBPo9iQDQrAXyiGnsBdDMMgTBpFHp61G2NEg62qZWcCyLqjHex2MZtjpaH756jjte3wGovp5GcqCYD9ThLv76oRb9QMAJkaPKLHoNNOmnqtBmtfsGzFGytVdjgWFUl7N+Jyqqdjudj7BtSPuM22Q5rcxDk0UMYa+Jl20ES1RbZx6Cj9SQ7aN9TQycVkpDzvdiBw==",
+  "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo70hAnME7ns4ldJVhsmP\nrkVI+ka1+dgKXXu2GqiNQGJbjkdUzV4kajNOJ7H6bYy6h6E/kuJq+YSd5iOHn+GD\nFBPQRmNTnaJtycMW3B5n2gS9jzk5lYLP0XhKGd+WWJdvu1g+eU9ZzA+vWIl1rlZI\n2dH6+qOSVwJLOMH5yqVV61O2m7mk1MaddaUWcfSTmFxbepEs5HrEb37mqO/rJnnD\nRmrMLJFe0dQcdeZtsqXfxITXMioxS4gddwqTPIX+31BiwkuXxzQJWkRDDwgPmzvv\nOU+E1iPjgjvCFUJXdtYLPz9biCBzHw6hDOty/zFsfFEsW1V7Xgcyis03eDZBEFn3\naQIDAQAB\n-----END PUBLIC KEY-----\n",
   "algorithm": "RSA-PSS",
   "signer_info": {
     "organization": "AI Trust Demo",
     "email": "demo@ai-trust.example",
     "purpose": "demonstration"
   },
-  "signed_at": "2025-10-18T18:55:55.736678+00:00"
+  "signed_at": "2025-10-26T22:40:07.858358+00:00"
 }
